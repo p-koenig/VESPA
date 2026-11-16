@@ -1,0 +1,77 @@
+VESPA export hook for upstream SYMPOL (https://github.com/s-marton/SYMPOL, commit 4f24add, MIT License,
+Copyright (c) 2024 Sascha Marton). Apply with `git apply` inside a checkout of that commit.
+The hook only writes the final actor of each trial (with its evaluation history and its outputs on a probe set) to
+$SYMPOL_EXPORT_DIR after training. It does not touch training or any random number stream.
+
+diff --git a/ppo_gymnax.py b/ppo_gymnax.py
+index 65631bc..31ebf51 100644
+--- a/ppo_gymnax.py
++++ b/ppo_gymnax.py
+@@ -47,6 +47,55 @@ from gymnax.wrappers import gym as wrappers
+ from gymnax.wrappers.purerl import FlattenObservationWrapper, GymnaxWrapper
+ from gymnasium.wrappers import FlattenObservation
+ 
++
++# --- VESPA export hook -------------------------------------------------------
++# Added to the upstream SYMPOL code (commit 4f24add). When the environment
++# variable SYMPOL_EXPORT_DIR is set, the final actor of each trial (parameters
++# and indices), its evaluation history, final evaluation and final test
++# evaluation, and the raw actor outputs on a fixed probe set are written as
++# .npz/.json after training. Nothing here runs during training, uses a random
++# number stream of training or changes an argument.
++def _export_trial(export_dir, run_name, trial, args, actor, actor_state,
++                      avg_score_list, avg_score_test, global_step, env_seed,
++                      seed_training):
++    import json as _json
++    out = os.path.join(export_dir, run_name)
++    os.makedirs(out, exist_ok=True)
++    flat = {}
++    for k, v in actor_state.params.items():
++        flat["params/" + k] = np.asarray(jax.device_get(v))
++    for k, v in (actor_state.indices or {}).items():
++        flat["indices/" + k] = np.asarray(jax.device_get(v))
++    gx = np.linspace(-1.2, 0.6, 201)
++    gv = np.linspace(-0.07, 0.07, 141)
++    X, V = np.meshgrid(gx, gv, indexing="ij")
++    rng = np.random.default_rng(12345)
++    rnd = np.stack([rng.uniform(-1.2, 0.6, 20000), rng.uniform(-0.07, 0.07, 20000)], -1)
++    probe = np.concatenate([np.stack([X.ravel(), V.ravel()], -1), rnd]).astype(np.float32)
++    res = actor.apply(actor_state.params, jnp.asarray(probe), indices=actor_state.indices)
++    flat["probe/obs"] = probe
++    flat["probe/mean"] = np.asarray(jax.device_get(res[0]))
++    flat["probe/log_std"] = np.asarray(jax.device_get(res[1]))
++    np.savez(os.path.join(out, "actor.npz"), **flat)
++    meta = {
++        "run_name": run_name, "trial": int(trial), "seed": int(args.seed),
++        "env_seed": int(env_seed), "seed_training": int(seed_training),
++        "env_id": args.env_id, "global_step": int(global_step),
++        "final_eval": float(avg_score_list[-1]) if avg_score_list else None,
++        "test_eval": None if avg_score_test is None else float(avg_score_test),
++        "eval_history": [float(x) for x in avg_score_list],
++        "actor_config": {"obs_dim": 2, "action_dim": int(np.asarray(actor_state.params["log_std"]).shape[-1]),
++                         "depth": int(args.depth), "n_estimators": int(args.n_estimators)},
++        "action_type": args.action_type,
++        "args": {k: (v if isinstance(v, (int, float, str, bool, type(None))) else str(v))
++                 for k, v in vars(args).items()},
++        "jax_version": jax.__version__, "backend": jax.default_backend(),
++    }
++    with open(os.path.join(out, "meta.json"), "w") as f:
++        _json.dump(meta, f, indent=1)
++    print(f"[export] trial {trial}: {out} final_eval={meta['final_eval']} "
++          f"test_eval={meta['test_eval']}", flush=True)
++
+ #os.environ['MUJOCO_GL'] = 'egl'
+ 
+ 
+@@ -1457,6 +1506,11 @@ def train_agent(args, trial=None, queue=None):
+         if args.track:
+             wandb_run.finish()
+ 
++        if os.environ.get("SYMPOL_EXPORT_DIR"):   # VESPA export hook (no effect on training)
++            _export_trial(os.environ["SYMPOL_EXPORT_DIR"], run_name,
++                              random_trial_number, args, actor, actor_state,
++                              avg_score_list, locals().get("avg_score_test"),
++                              global_step, env_seed, seed_training)
+         #trial_scores.append(np.mean(avg_score_list[-5:]))
+         trial_scores.append(avg_score_list[-1])
+ 

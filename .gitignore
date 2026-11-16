@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Outputs of experiments, pretraining and analysis (never committed)
+/runs/
+/results/
+/outputs/
+/checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

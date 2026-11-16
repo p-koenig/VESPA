@@ -1,0 +1,62 @@
+# VESPA on CartPole: the settings of the paper's CartPole runs.
+#
+# Paper results produced with these settings (experiments/cartpole/runs.py):
+#   tab_cp   Table tab:cp, Fig. cp-progress: 24 input policies x {vespa, uninformed}
+#            x fine-tuning seeds {0, 1} = 96 loop runs
+#   figure3  Fig. 3: verification of the SYMPOL trees s8u, s27u, s40u
+#   viper    Fig. 3 / appendix: verification of the 21 VIPER trees
+
+[verifier]
+horizon = 200                  # steps to verify (n)
+x_threshold = 2.4              # unsafe: |x| > 2.4
+theta_threshold = 0.20943951   # unsafe: |theta| > 0.20943951 rad (12 degrees)
+start_halfwidth = 0.05         # start set [-0.05, 0.05]^4
+kernel_cap = 178000000         # boxes per kernel call (paper: one NVIDIA H200, 140 GiB)
+action_history = 14            # actions kept per box (for the counterexample regions)
+box_memory_gib = "auto"        # GPU memory of the box pool: everything beside the kernel
+
+[loop]
+max_iterations = 12            # verifications per run (input policy + up to 11 candidates)
+lookback = 10                  # counterexample regions lie up to 10 steps before the violation
+backprop_max_boxes = 250000    # violating boxes walked back (stratified subsample above)
+seeds = [0, 1]                 # fine-tuning seeds
+
+# PPO on the SYMPOL tree (SYMPOL's CartPole hyperparameters, one learning rate
+# for all tree parameters).
+[finetune]
+total_steps = 100000           # environment steps per fine-tuning
+n_envs = 7
+n_steps = 512                  # steps per env and rollout
+n_epochs = 7
+minibatch_size = 64
+learning_rate = 0.0003         # tree parameters
+critic_lr = 0.0013329992676131342
+critic_layers = 2
+critic_width = 256
+gamma = 0.99
+gae_lambda = 0.95
+clip_coef = 0.1
+ent_coef = 0.2
+vf_coef = 0.5
+max_grad_norm = 1000.0
+terminal_penalty = -100.0      # reward when the state leaves the safety box (episode ends)
+n_val_episodes = 30            # deterministic validation episodes ("Return")
+
+# Probability that a fine-tuning episode starts in a counterexample region.
+[methods]
+vespa = 0.5
+uninformed = 0.0
+
+[policies]
+# A policy name is looked up in these directories, in this order.
+dirs = ["policies/cartpole/evaluation", "policies/cartpole/figure3",
+        "policies/cartpole/tuning", "policies/viper"]
+# 24 input policies: 12 pretraining seeds, pruned (p) and unpruned (u).
+evaluation = ["s6p", "s6u", "s10p", "s10u", "s12p", "s12u", "s13p", "s13u",
+              "s14p", "s14u", "s17p", "s17u", "s20p", "s20u", "s21p", "s21u",
+              "s27p", "s27u", "s28p", "s28u", "s42p", "s42u", "s43p", "s43u"]
+figure3 = ["s8u", "s27u", "s40u"]
+viper = ["viper_L2_s4", "viper_L2_s5", "viper_L2_s6", "viper_L4_s4", "viper_L4_s5", "viper_L4_s6",
+         "viper_L8_s4", "viper_L8_s5", "viper_L8_s6", "viper_L16_s4", "viper_L16_s5", "viper_L16_s6",
+         "viper_L32_s4", "viper_L32_s5", "viper_L32_s6", "viper_L64_s4", "viper_L64_s5", "viper_L64_s6",
+         "viper_L128_s4", "viper_L128_s5", "viper_L128_s6"]
