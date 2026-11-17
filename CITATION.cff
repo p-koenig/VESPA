@@ -6,16 +6,16 @@ license: MIT
 authors:
   - family-names: König
     given-names: Paul
-    affiliation: "CORE: Machine Learning and Cognitive Software, Institute for Software and Systems Engineering, Clausthal University of Technology"
+    affiliation: "COgnitive SoftwaRE (CORE), Clausthal University of Technology"
   - family-names: Marton
     given-names: Sascha
-    affiliation: "NVIDIA"
+    affiliation: "COgnitive SoftwaRE (CORE), Clausthal University of Technology"
   - family-names: Lüdtke
     given-names: Stefan
     affiliation: "Marine Data Science, Institute for Visual and Analytic Computing, University of Rostock"
   - family-names: Bartelt
     given-names: Christian
-    affiliation: "CORE: Machine Learning and Cognitive Software, Institute for Software and Systems Engineering, Clausthal University of Technology"
+    affiliation: "COgnitive SoftwaRE (CORE), Clausthal University of Technology"
 preferred-citation:
   type: unpublished
   title: "VESPA: Verifiable Symbolic Policy Adaptation for Safe Reinforcement Learning"
