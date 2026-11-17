@@ -100,6 +100,7 @@ for t in tests/*/test_*.py; do python $t || break; done
 * Paul König: COgnitive SoftwaRE (CORE) @ Clausthal University of Technology
 * Sascha Marton: COgnitive SoftwaRE (CORE) @ Clausthal University of Technology
 * Stefan Lüdtke: Institute for Visual and Analytic Computing, University of Rostock
+* Christian Bartelt: COgnitive SoftwaRE (CORE) @ Clausthal University of Technology
 
 ## License and acknowledgements
 
