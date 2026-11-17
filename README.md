@@ -2,18 +2,12 @@
 
 Paul König, Sascha Marton, Stefan Lüdtke, Christian Bartelt
 
-This repository contains the implementation and the pretrained input policies of the paper
-*VESPA: Verifiable Symbolic Policy Adaptation for Safe Reinforcement Learning*.
+VESPA uses the result of a formal verification as a training signal for targeted fine-tuning. It verifies a decision tree policy with reachability analysis, extracts counterexample regions from the violating states, fine-tunes the policy with episodes that start in those regions, and verifies the fine-tuned policy again. The loop repeats until the policy is proven safe or the iteration budget is used up.
 
-VESPA turns the result of a formal verification into a training signal. It verifies a decision tree policy with
-reachability analysis, extracts counterexample regions from the violating states, fine-tunes the policy with
-episodes that start in those regions, and verifies the fine-tuned policy again. The loop repeats until the policy
-is proven safe or the iteration budget is used up.
-
-| | Input policies | Uninformed (same loop, no counterexamples) | VESPA |
-|---|---|---|---|
-| CartPole: mean verified safe steps (horizon 200) | 63.8 | ≥ 85.2 | ≥ 92.7 |
-| MountainCarContinuous: runs ending with a policy proven safe (of 60) | 0 | 46 | 53 |
+<p align="center">
+  <img src="docs/figures/cp_progress.png" alt="CartPole: verified safe steps per fine-tuning iteration" width="48%">
+  <img src="docs/figures/mcc_progress.png" alt="MountainCarContinuous: safe start state regions per fine-tuning iteration" width="48%">
+</p>
 
 ## Repository layout
 
@@ -41,8 +35,7 @@ conda activate vespa
 pip install -e . --no-deps
 ```
 
-All commands are run from the repository root. Every run needs one NVIDIA GPU. The tests and the analysis run
-on CPU.
+All commands are run from the repository root. Every run needs one NVIDIA GPU. The tests and the analysis run on CPU.
 
 ## Reproducing the paper
 
@@ -50,16 +43,14 @@ on CPU.
 
 | Paper result | Command | Runs | GPU used in the paper |
 |---|---|---|---|
-| CartPole results table and progress figure | `python experiments/cartpole/runs.py run --table tab_cp` | 96 | NVIDIA H200, one per run |
+| CartPole results table and progress figure | `python experiments/cartpole/runs.py run --table tab_cp` | 96 | NVIDIA H200 |
 | Verified safe steps of the 21 VIPER trees | `python experiments/cartpole/runs.py run --table viper` | 21 | NVIDIA H200 |
 | Verified safe steps of the SYMPOL trees in the return-vs-safety figure | `python experiments/cartpole/runs.py run --table figure3` | 3 | NVIDIA H200 |
 | MountainCarContinuous results table and progress figure | `python experiments/mountaincar/run_all.py` | 120 | NVIDIA RTX PRO 6000 |
 
-The runs are independent of each other. `runs.py run-index --table tab_cp --index I` and `run_all.py --index I`
-run a single one, for example as one task of an array job (`experiments/slurm/`). Finished runs are skipped when
-a driver is started again.
+The runs are independent of each other. `runs.py run-index --table tab_cp --index I` and `run_all.py --index I` run a single one, for example as one task of an array job (`experiments/slurm/`). Finished runs are skipped when run again.
 
-A single run is one input policy, one method and one fine-tuning seed:
+A single run specified by one input policy, the method and one fine-tuning seed:
 
 ```bash
 python experiments/cartpole/run.py loop --policy s13u --method vespa --seed 0
@@ -72,9 +63,6 @@ python -m vespa.mountaincar.verify --policy policies/mountaincar/evaluation/s0/b
 ```
 
 Runs write to `runs/cartpole/<run-name>/` and `runs/mountaincar/<run-name>/`.
-
-In the paper, a CartPole run took between 11 minutes and 3.3 hours (median 33 minutes) and a
-MountainCarContinuous run a median of 9 minutes.
 
 ### 2. Build the tables and figures
 
@@ -90,27 +78,12 @@ This reads `runs/cartpole` and `runs/mountaincar` and writes the three result ta
 The input policies of the paper are in `policies/`, so this step is not needed to reproduce the results.
 `experiments/pretraining/README.md` gives the commands that trained them.
 
-## Hardware notes
-
-* **CartPole results depend on the GPU memory.** The CartPole verifier keeps all boxes in GPU memory. When the
-  memory is full, the result is a lower bound ("≥ d verified safe steps"). The paper used GPUs with 143 GB.
-  `experiments/cartpole/README.md` explains what changes on a smaller GPU.
-* **NVIDIA Blackwell GPUs (for example RTX PRO 6000) need a newer `ptxas`** than the one shipped with JAX 0.9.2.
-  See `experiments/cartpole/README.md` and `experiments/mountaincar/README.md`.
-
 ## Tests
 
 ```bash
 export JAX_PLATFORMS=cpu
 for t in tests/*/test_*.py; do python $t || break; done
 ```
-
-## Scope
-
-* The refinement check described in the appendix of the paper is an additional analysis and not part of this
-  implementation.
-* The VIPER trees were trained with third-party code, which is not included. `baselines/viper/README.md` gives
-  the source, the commands and our conversion script. The converted trees are in `policies/viper/`.
 
 ## Citation
 
@@ -124,13 +97,10 @@ for t in tests/*/test_*.py; do python $t || break; done
 
 ## Authors
 
-* Paul König and Christian Bartelt: CORE (Machine Learning and Cognitive Software), Institute for Software and
-  Systems Engineering, Clausthal University of Technology
-* Sascha Marton: NVIDIA
-* Stefan Lüdtke: Marine Data Science, Institute for Visual and Analytic Computing, University of Rostock
+* Paul König: COgnitive SoftwaRE (CORE) @ Clausthal University of Technology
+* Sascha Marton: COgnitive SoftwaRE (CORE) @ Clausthal University of Technology
+* Stefan Lüdtke: Institute for Visual and Analytic Computing, University of Rostock
 
 ## License and acknowledgements
 
-The code is released under the MIT License (see `LICENSE`). The tree policies and their training build on
-[SYMPOL](https://github.com/s-marton/sympol) (MIT License, © 2024 Sascha Marton). The environments follow
-[gymnax](https://github.com/RobertTLange/gymnax).
+The code is released under the MIT License (see `LICENSE`).
