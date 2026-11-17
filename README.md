@@ -44,7 +44,7 @@ All commands are run from the repository root. Every run needs one NVIDIA GPU. T
 | Paper result | Command | Runs | GPU used in the paper |
 |---|---|---|---|
 | CartPole results table and progress figure | `python experiments/cartpole/runs.py run --table tab_cp` | 96 | NVIDIA H200 |
-| Verified safe steps of the 21 VIPER trees | `python experiments/cartpole/runs.py run --table viper` | 21 | NVIDIA H200 |
+| Verified safe steps of the VIPER trees | `python experiments/cartpole/runs.py run --table viper` | 21 | NVIDIA H200 |
 | Verified safe steps of the SYMPOL trees in the return-vs-safety figure | `python experiments/cartpole/runs.py run --table figure3` | 3 | NVIDIA H200 |
 | MountainCarContinuous results table and progress figure | `python experiments/mountaincar/run_all.py` | 120 | NVIDIA RTX PRO 6000 |
 
